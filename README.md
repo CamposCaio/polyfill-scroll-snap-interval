@@ -1,0 +1,1 @@
+# polyfill-scroll-snap-interval
