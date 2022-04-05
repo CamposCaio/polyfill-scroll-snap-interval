@@ -1,48 +1,41 @@
-let isUserScrolling = false;
-let scrollingDirection = "";
-let previousScrollPosition = 0;
+let isPageScrolling = false
+let scrollingDirection = ''
+let previousPageYOffset = 0
 
-const firstSectionElement = document.getElementsByTagName("section")[0];
-let sectionHeight = firstSectionElement.scrollHeight;
+const sectionElement = document.getElementsByTagName('section')[0]
+let sectionHeight = sectionElement.scrollHeight
 
 new ResizeObserver(() => {
-  sectionHeight = firstSectionElement.scrollHeight;
-}).observe(firstSectionElement);
+  sectionHeight = sectionElement.scrollHeight
+}).observe(sectionElement)
 
-function animateScroll(currentScrollPosition) {
-  const topDisalignment = currentScrollPosition % sectionHeight;
-  if (topDisalignment === 0) return;
-  if (scrollingDirection === "top") {
-    window.scrollBy({
-      top: -topDisalignment,
-      left: 0,
-      behavior: "smooth",
-    });
-  } else {
-    window.scrollBy({
-      top: sectionHeight - topDisalignment,
-      left: 0,
-      behavior: "smooth",
-    });
-  }
+function animateScroll(pageYOffset) {
+  const topDisalignment = pageYOffset % sectionHeight
+  if (topDisalignment < 1) return
+
+  const offsetToAlignment =
+    scrollingDirection === 'top'
+      ? -topDisalignment
+      : sectionHeight - topDisalignment
+
+  window.scrollBy({
+    top: offsetToAlignment,
+    left: 0,
+    behavior: 'smooth',
+  })
 }
 
-setInterval(watchScroll, 25);
+setInterval(watchScroll, 25)
 
 function watchScroll() {
-  const currentScrollPosition = window.pageYOffset;
-  if (isUserScrolling) {
-    if (currentScrollPosition === previousScrollPosition) {
-      isUserScrolling = false;
-      animateScroll(currentScrollPosition);
-    } else {
-      scrollingDirection =
-        currentScrollPosition - previousScrollPosition < 0 ? "top" : "bottom";
-    }
-  } else {
-    if (currentScrollPosition !== previousScrollPosition) {
-      isUserScrolling = true;
-    }
-  }
-  previousScrollPosition = currentScrollPosition;
+  const currentPageYOffset = window.pageYOffset
+  if (isPageScrolling && currentPageYOffset === previousPageYOffset) {
+    isPageScrolling = false
+    animateScroll(currentPageYOffset)
+  } else if (!isPageScrolling && currentPageYOffset !== previousPageYOffset)
+    isPageScrolling = true
+
+  scrollingDirection =
+    currentPageYOffset - previousPageYOffset < 0 ? 'top' : 'bottom'
+  previousPageYOffset = currentPageYOffset
 }
