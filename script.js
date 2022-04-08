@@ -1,41 +1,53 @@
-let isPageScrolling = false
-let scrollingDirection = ''
-let previousPageYOffset = 0
+let listenForPageScroll = true
+let sectionHeight = window.innerHeight
+let targetY = 0
+let animationFrameID = 0
+let previousScrollY = 0
+let scrollAnimationEnded = false
 
-const sectionElement = document.getElementsByTagName('section')[0]
-let sectionHeight = sectionElement.scrollHeight
+window.addEventListener('resize', () => {
+  sectionHeight = window.innerHeight
+})
 
-new ResizeObserver(() => {
-  sectionHeight = sectionElement.scrollHeight
-}).observe(sectionElement)
-
-function animateScroll(pageYOffset) {
-  const topDisalignment = pageYOffset % sectionHeight
-  if (topDisalignment < 1) return
-
-  const offsetToAlignment =
-    scrollingDirection === 'top'
-      ? -topDisalignment
-      : sectionHeight - topDisalignment
-
-  window.scrollBy({
-    top: offsetToAlignment,
-    left: 0,
-    behavior: 'smooth',
-  })
+function handleScroll(enable) {
+  document.body.scroll = enable ? 'yes' : 'no'
+  document.body.style.overflowY = enable ? 'visible' : 'hidden'
 }
 
-setInterval(watchScroll, 25)
+window.addEventListener('scroll', () => {
+  handleScroll(false)
 
-function watchScroll() {
-  const currentPageYOffset = window.pageYOffset
-  if (isPageScrolling && currentPageYOffset === previousPageYOffset) {
-    isPageScrolling = false
-    animateScroll(currentPageYOffset)
-  } else if (!isPageScrolling && currentPageYOffset !== previousPageYOffset)
-    isPageScrolling = true
+  if (listenForPageScroll && Math.abs(window.scrollY - previousScrollY) >= 1) {
+    listenForPageScroll = false
+    if (window.scrollY < previousScrollY) {
+      targetY = Math.trunc(window.scrollY / sectionHeight) * sectionHeight
+    } else {
+      targetY = (Math.trunc(window.scrollY / sectionHeight) + 1) * sectionHeight
+    }
+    animateScroll()
+  }
+  previousScrollY = window.scrollY
+})
 
-  scrollingDirection =
-    currentPageYOffset - previousPageYOffset < 0 ? 'top' : 'bottom'
-  previousPageYOffset = currentPageYOffset
+function animateScroll() {
+  animationFrameID = requestAnimationFrame(animateScroll)
+
+  const offsetYToAlignment = targetY - window.scrollY
+
+  if (Math.abs(offsetYToAlignment) < 5) {
+    scrollAnimationEnded = true
+    cancelAnimationFrame(animationFrameID)
+    window.scrollTo(0, targetY)
+
+    setTimeout(() => {
+      listenForPageScroll = true
+      scrollAnimationEnded = false
+      handleScroll(true)
+    }, 50)
+  }
+  if (scrollAnimationEnded) return
+
+  if (offsetYToAlignment > 0)
+    window.scrollBy(0, Math.ceil(offsetYToAlignment / 10) + 4)
+  else window.scrollBy(0, Math.floor(offsetYToAlignment / 10) - 4)
 }
